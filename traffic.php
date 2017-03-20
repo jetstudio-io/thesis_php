@@ -2,7 +2,7 @@
 function generateTraffic($simTime, $numberChange, $fixedIWU) {
     $segment = $simTime / ($numberChange + 1);
     $twu = array_fill(1, 510, 0);
-    $t = rand(10, 50);
+    $t = rand(5, 30);
     $twu[1] = $t;
     $change_idx = 1;
     $wu_idx = 2;
@@ -35,6 +35,9 @@ for ($max_node = 3; $max_node <= 15; $max_node++) {
     }
     for ($sim = 0; $sim < 100; $sim++) {
         $file = $dir . "/" . ($sim + 1) . ".csv";
+        $t = rand(10, 40);
+        file_put_contents($file, ($t + 7) . "\n", FILE_APPEND);
+        file_put_contents($file, $t . "\n", FILE_APPEND);
         for ($node = 0; $node < $max_node; $node++) {
             $iwu = generateTraffic(100000, 0, 0);
             $row = implode(",", $iwu) . "\n";

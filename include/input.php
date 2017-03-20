@@ -3,7 +3,8 @@ function getIWU($nb_sender, $sim) {
     $file = "data/" . $nb_sender . "/" . $sim . ".csv";
     $fileHandle = fopen($file, "r");
     $twu = array();
-    $twu[1] = $twu[2] = 0;
+    $twu[1] = fgetcsv($fileHandle, null, ",", "\n");
+    $twu[2] = fgetcsv($fileHandle, null, ",", "\n");
     for ($idx = 3; $idx <= $nb_sender + 2; $idx++) {
         $row = fgetcsv($fileHandle, null, ",", "\n");
         $twu[$idx] = $row;

@@ -2,7 +2,7 @@
 include_once 'include/input.php';
 include_once 'include/output.php';
 
-const OUT_DIR = 'fta/normal';
+const OUT_DIR = 'out/fta/dda';
 
 const RELAY_IWU = 100;
 const RELAY_IDX = 2;
@@ -18,14 +18,16 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
     //Run 100 simulation for each configuration
     for ($sim = 1; $sim <= number_sim; $sim++) {
         //Get Iwu
-        $twu = getIWU($nb_sender, $sim);
-        $twuIdx = array_fill(3, $nb_sender, 0);
-        $twu[DEST_IDX] = $twu[RELAY_IDX] = array_fill(3, $nb_sender, 0);
-        $iwu = array_fill(3, $nb_sender, 100);
-        $deltaT = array_fill(3, $nb_sender, 100);
-        $t = 0;
         //statistic to calculate energy
         $t_sleep = $t_node[0] = $t_node[1] = $t_node[2] = array_fill(1, $nb_node, 0);
+        $twu = getIWU($nb_sender, $sim);
+        $t = (int)$twu[RELAY_IDX][0];
+        $t_sleep[RELAY_IDX] = $t_sleep[DEST_IDX] = $t;
+        $twuIdx = array_fill(3, $nb_sender, 0);
+        $twu[DEST_IDX] = $twu[RELAY_IDX] = array_fill(3, $nb_sender, $t);
+        $iwu = array_fill(3, $nb_sender, 100);
+        // queue to store data packet -> calculate the delay
+        $inQueue = [];
 
         while ($t < sim_time) {
             /**
@@ -39,14 +41,14 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
                     // calculate idle as rx time
                     $t_node[NODE_RX][$idx] += $t - $twu[$idx][$twuIdx[$idx]];
                     // calculate idle in waiting slot to send data
-                    $t_node[NODE_RX][$idx] += T_CCA + T_WB + ($idx - 3) * T_SLOT;
+                    $t_node[NODE_RX][$idx] += T_CCA + T_WB + $nb_wakeup * T_SLOT;
 
                     // calculate time in transmission process
                     $t_node[NODE_RX][$idx] += T_CCA + T_CCA + T_ACK;
                     $t_node[NODE_TX][$idx] += T_DATA;
 
                     // Change back to sleep
-                    $t_sleep[$idx] = $t + T_CCA + T_WB + ($idx - 2) * T_SLOT;
+                    $t_sleep[$idx] = $t + T_CCA + T_WB + ($nb_wakeup + 1) * T_SLOT;
                     $twuIdx[$idx]++;
 
                     $nb_wakeup++;
@@ -85,6 +87,7 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
             $t_node[NODE_RX][RELAY_IDX] += T_DATA;
             $t_trans += T_DATA;
 
+
             // send big data file to destination
             if ($nb_wakeup > 0) {
                 $t_data_agg = (L_DATA + ($nb_wakeup - 1) * (L_DATA - 7)) * 8 / bitrate;
@@ -101,10 +104,15 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
                 $t_node[NODE_RX][DEST_IDX] += T_CCA + T_CCA + $t_data_agg + T_CCA;
                 $t_node[NODE_TX][DEST_IDX] += T_WB + T_ACK;
                 $t_trans += T_CCA + T_WB + T_CCA + $t_data_agg + T_CCA + T_ACK;
+                $t_sleep[DEST_IDX] = $t + $t_trans;
             } else {
-
+                $t_node[NODE_SLEEP][DEST_IDX] += $t + $t_trans - $t_sleep[DEST_IDX];
+                $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
+                $t_node[NODE_TX][DEST_IDX] += T_WB;
+                $t_sleep[DEST_IDX] = $t + $t_trans + T_CCA + T_WB + T_DATA;
             }
-            $t_sleep[DEST_IDX] = $t_sleep[RELAY_IDX] = $t + $t_trans;
+
+            $t_sleep[RELAY_IDX] = $t + $t_trans;
 
             $t = min($twu[RELAY_IDX]);
         }
