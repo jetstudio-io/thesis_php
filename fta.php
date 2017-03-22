@@ -44,7 +44,6 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
                     $t_node[NODE_RX][$idx] += $t - $twu[$idx][$twuIdx[$idx]];
                     // calculate idle in waiting slot to send data
                     $t_node[NODE_RX][$idx] += T_CCA + T_WB + $nb_wakeup * T_SLOT;
-                    $t_trans = T_CCA + T_WB + $nb_wakeup * T_SLOT;
 
                     // calculate time in transmission process
                     $t_node[NODE_RX][$idx] += T_CCA + T_CCA + T_ACK;
@@ -55,6 +54,10 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
                     $twuIdx[$idx]++;
 
                     $nb_wakeup++;
+                    // Calculate the idle_listening
+                    $t_trans = T_CCA + T_WB + $nb_wakeup * T_SLOT;
+                    //Calculate communication time
+                    $t_trans += T_CCA + T_DATA;
                     // store packet in queue
                     $queue[$queueIdx] = ['idx' => $idx, 'time' => $t + $t_trans];
                     $queueIdx++;
@@ -66,7 +69,7 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
                     } else {
                         $twu[RELAY_IDX][$idx] += $iwu[$idx];
                     }
-                } else {
+                } elseif ($twu[RELAY_IDX][$idx] <= $t) {
                     $twu[RELAY_IDX][$idx] += $iwu[$idx];
                 }
             }
@@ -99,10 +102,13 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
                 $nextWakeup = min($twu[RELAY_IDX]);
                 // aggregation condition is satisfied -> go to sleep
                 if ($nextWakeup < $queue[0]["time"] + DELTA_MAX) {
-
+                    // Destination still wake up & send WB
+                    $t_node[NODE_SLEEP][DEST_IDX] += $t + $t_trans - $t_sleep[DEST_IDX];
+                    $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
+                    $t_node[NODE_TX][DEST_IDX] += T_WB;
+                    $t_sleep[DEST_IDX] = $t + $t_trans + T_CCA + T_WB + T_DATA;
                 } else { // send big packet to destination
                     $nbPacket = count($queue);
-
                     // Receiver
                     $t_data_agg = (L_DATA + ($nbPacket - 1) * (L_DATA - 7)) * 8 / bitrate;
                     $t_node[NODE_RX][RELAY_IDX] += T_CCA + T_WB + T_CCA + T_CCA + T_ACK;
@@ -117,11 +123,17 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
                     $t_sleep[DEST_IDX] = $t + $t_trans;
 
                     //empty queue
+                    foreach ($queue as $packet) {
+                        $delay
+                    }
                     $queue = [];
                     $queueIdx = 0;
                 }
             } else {
-
+                $t_node[NODE_SLEEP][DEST_IDX] += $t + $t_trans - $t_sleep[DEST_IDX];
+                $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
+                $t_node[NODE_TX][DEST_IDX] += T_WB;
+                $t_sleep[DEST_IDX] = $t + $t_trans + T_CCA + T_WB + T_DATA;
             }
 
             $t_sleep[RELAY_IDX] = $t + $t_trans;
