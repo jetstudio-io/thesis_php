@@ -12,7 +12,7 @@ const DELTA_MAX = 30;
 //variate number of sender
 for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
     $nb_node = $nb_sender + 2;
-    $delay = $e = array_fill(1, $nb_node, 0);
+    $nb_pkg_recv = $nb_pkg = $delay = $e = array_fill(1, number_sim, 0);
     $nb_pkg_agg = $nb_pkg_max = $nb_agg = array_fill(1, number_sim, 0);
     $nb_pkg_agg_min = array_fill(1, number_sim, $nb_sender);
 
@@ -122,10 +122,12 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
                     $t_trans += T_CCA + T_WB + T_CCA + $t_data_agg + T_CCA + T_ACK;
                     $t_sleep[DEST_IDX] = $t + $t_trans;
 
-                    //empty queue
+                    //Calculate delay
                     foreach ($queue as $packet) {
-                        $delay
+                        $delay[$packet['idx']][$sim] += $t + $t_trans - T_CCA - T_ACK - $packet['time'];
+                        $nb_pkg_recv[$packet['idx']][$sim]++;
                     }
+                    //empty queue
                     $queue = [];
                     $queueIdx = 0;
                 }
@@ -139,6 +141,10 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
             $t_sleep[RELAY_IDX] = $t + $t_trans;
 
             $t = min($twu[RELAY_IDX]);
+        }
+
+        for ($idx = 1; $idx <= $nb_node; $idx++) {
+            $e[$sim] = Psp * array_sum($t_node[NODE_SLEEP]) + Prx * array_sum($t_node[NODE_RX]) + Ptx * array_sum($t_node[NODE_TX]);
         }
 
         /**

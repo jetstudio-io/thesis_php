@@ -14,7 +14,7 @@ function getIWU($nb_sender, $sim) {
 
 const Ptx = 17.4 * 3.3; //power in mW
 const Prx = 18.8 * 3.3; //power in mW
-const Psleep = 0.03 * 3.3;
+const Psp = 0.03 * 3.3;
 
 const NODE_SLEEP = 0;
 const NODE_RX = 1;
