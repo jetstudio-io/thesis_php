@@ -9,11 +9,12 @@ const RELAY_IDX = 2;
 const DEST_IDX = 1;
 const DELTA_MAX = 30;
 
+$nb_agg = $e = $nb_pkg_recv = $delay = array_fill(3, max_node - 2, array_fill(1, number_sim, 0));
 //variate number of sender
 for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
     $nb_node = $nb_sender + 2;
-    $nb_pkg_recv = $nb_pkg = $delay = $e = array_fill(1, number_sim, 0);
-    $nb_pkg_agg = $nb_pkg_max = $nb_agg = array_fill(1, number_sim, 0);
+
+    $nb_pkg_agg = $nb_pkg_max = array_fill(1, number_sim, 0);
     $nb_pkg_agg_min = array_fill(1, number_sim, $nb_sender);
 
     //Run 100 simulation for each configuration
@@ -127,6 +128,11 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
                         $delay[$packet['idx']][$sim] += $t + $t_trans - T_CCA - T_ACK - $packet['time'];
                         $nb_pkg_recv[$packet['idx']][$sim]++;
                     }
+
+                    //number of aggregation
+                    if (count($queue) > 1) {
+                        $nb_agg[$nb_sender][$sim]++;
+                    }
                     //empty queue
                     $queue = [];
                     $queueIdx = 0;
@@ -143,16 +149,18 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
             $t = min($twu[RELAY_IDX]);
         }
 
-        for ($idx = 1; $idx <= $nb_node; $idx++) {
-            $e[$sim] = Psp * array_sum($t_node[NODE_SLEEP]) + Prx * array_sum($t_node[NODE_RX]) + Ptx * array_sum($t_node[NODE_TX]);
-        }
-
         /**
          * ENERGY
          */
-
+        for ($idx = 1; $idx <= $nb_node; $idx++) {
+            $e[$nb_sender][$sim] += (Psp * array_sum($t_node[NODE_SLEEP]) + Prx * array_sum($t_node[NODE_RX]) + Ptx * array_sum($t_node[NODE_TX]));
+        }
         /**
          * DELAY
          */
+        for ($idx = 3; $idx <= $nb_node; $idx++) {
+            $delay[$idx][$sim] = $delay[$idx][$sim] / $nb_pkg_recv[$idx][$sim];
+        }
     }
+
 }
