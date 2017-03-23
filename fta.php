@@ -2,16 +2,20 @@
 include_once 'include/input.php';
 include_once 'include/output.php';
 
-const OUT_DIR = 'out/fta/dda';
+const OUT_DIR = 'out/fta/dda/';
 
 const RELAY_IWU = 100;
 const RELAY_IDX = 2;
 const DEST_IDX = 1;
 const DELTA_MAX = 30;
 
-$nb_agg = $e = $nb_pkg_recv = $delay = array_fill(3, max_node - 2, array_fill(1, number_sim, 0));
+if (!file_exists(OUT_DIR)) {
+    mkdir(OUT_DIR, 0777, TRUE);
+}
+$delay_avg = $e_avg = array_fill(3, max_node - 2 , 0);
+$nb_agg = $e = $nb_pkg_recv = $delay = array_fill(1, max_node + 2, array_fill(1, number_sim + 1, 0));
 //variate number of sender
-for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
+for ($nb_sender = 3; $nb_sender <= max_node; $nb_sender++) {
     $nb_node = $nb_sender + 2;
 
     $nb_pkg_agg = $nb_pkg_max = array_fill(1, number_sim, 0);
@@ -152,9 +156,12 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
         /**
          * ENERGY
          */
+        $e[$nb_sender][$sim] += (Psp * array_sum($t_node[NODE_SLEEP]) + Prx * array_sum($t_node[NODE_RX]) + Ptx * array_sum($t_node[NODE_TX]));
+        $nb_pkg_total = 0;
         for ($idx = 1; $idx <= $nb_node; $idx++) {
-            $e[$nb_sender][$sim] += (Psp * array_sum($t_node[NODE_SLEEP]) + Prx * array_sum($t_node[NODE_RX]) + Ptx * array_sum($t_node[NODE_TX]));
+            $nb_pkg_total += $nb_pkg_recv[$idx][$sim];
         }
+        $e[$nb_sender][$sim] /= $nb_pkg_total;
         /**
          * DELAY
          */
@@ -162,5 +169,16 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
             $delay[$idx][$sim] = $delay[$idx][$sim] / $nb_pkg_recv[$idx][$sim];
         }
     }
-
+    // Energy consumption per packet receipt
+    $e_avg[$nb_sender] = number_format(array_sum($e[$nb_sender]) / 1000 / number_sim, 3);
+    // Delay average
+    $delay_avg[$nb_sender] = number_format(array_sum($delay[$nb_sender]) / number_sim, 3);
 }
+
+$filename = "energy_delta_" . DELTA_MAX . ".csv";
+$file = fopen(OUT_DIR . $filename, 'w');
+fputcsv($file, $e_avg);
+
+$filename = "delay_delta_" . DELTA_MAX . ".csv";
+$file = fopen(OUT_DIR . $filename, 'w');
+fputcsv($file, $delay_avg);
