@@ -2,7 +2,7 @@
 include_once 'include/input.php';
 include_once 'include/output.php';
 
-const OUT_DIR = 'out/fta/std/';
+const OUT_DIR = 'out/fta/dda/';
 
 const RELAY_IWU = 100;
 const RELAY_IDX = 2;
@@ -104,46 +104,50 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                 $t_node[NODE_RX][RELAY_IDX] += T_DATA;
                 $t_trans += T_DATA;
 
-                // Add delay 3ms
+                //add 3ms to delay
                 $t_node[NODE_RX][RELAY_IDX] += 3;
                 $t_trans += 3;
 
                 // if there is some packet in queue
+                // calculate the aggregation condition
                 if (count($queue)) {
-                    /**
-                     * Reciver
-                     */
-                    //Wait WB from destination
-                    $t_node[NODE_RX][RELAY_IDX] += T_CCA + T_WB;
-                    // Send nb_wakeup data packets to destination
-                    $t_node[NODE_TX][RELAY_IDX] += T_DATA * $nb_wakeup;
-                    // Receive ACK
-                    $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_CCA + T_ACK) * $nb_wakeup;
+                    $nextWakeup = min($twu[RELAY_IDX]);
+                    // aggregation condition is satisfied -> go to sleep
+                    if ($nextWakeup < $queue[0]["time"] + $delta_max) {
+                        // Destination still wake up & send WB
+                        $t_node[NODE_SLEEP][DEST_IDX] += $t + $t_trans - $t_sleep[DEST_IDX];
+                        $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
+                        $t_node[NODE_TX][DEST_IDX] += T_WB;
+                        $t_sleep[DEST_IDX] = $t + $t_trans + T_CCA + T_WB + T_DATA;
+                    } else { // send big packet to destination
+                        $nbPacket = count($queue);
+                        // Receiver
+                        $t_data_agg = (L_DATA + ($nbPacket - 1) * (L_DATA - 7)) * 8 / bitrate;
+                        $t_node[NODE_RX][RELAY_IDX] += T_CCA + T_WB + T_CCA + T_CCA + T_ACK;
+                        $t_node[NODE_TX][RELAY_IDX] += $t_data_agg;
 
-                    /**
-                     * Destination
-                     */
-                    // calculate sleep time
-                    $t_node[NODE_SLEEP][DEST_IDX] += $t - $t_sleep[DEST_IDX];
-                    // Send WB to relay node
-                    $t_node[NODE_RX][DEST_IDX] += T_CCA;
-                    $t_node[NODE_TX][DEST_IDX] += T_WB;
-                    // Receive data packets
-                    $t_node[NODE_RX][DEST_IDX] += (T_CCA + T_DATA + T_CCA) * $nb_wakeup;
-                    // Send ACK packets
-                    $t_node[NODE_TX][DEST_IDX] += T_ACK * $nb_wakeup;
-                    $t_trans += T_CCA + T_WB + (T_CCA + T_DATA + T_CCA + T_ACK) * $nb_wakeup;
-                    $t_sleep[DEST_IDX] = $t + $t_trans;
+                        // Destination
+                        $t_data_agg = (L_DATA + ($nbPacket - 1) * (L_DATA - 7)) * 8 / bitrate;
+                        $t_node[NODE_SLEEP][DEST_IDX] += $t + $t_trans - $t_sleep[DEST_IDX];
+                        $t_node[NODE_RX][DEST_IDX] += T_CCA + T_CCA + $t_data_agg + T_CCA;
+                        $t_node[NODE_TX][DEST_IDX] += T_WB + T_ACK;
+                        $t_trans += T_CCA + T_WB + T_CCA + $t_data_agg + T_CCA + T_ACK;
+                        $t_sleep[DEST_IDX] = $t + $t_trans;
 
-                    //Calculate delay
-                    foreach ($queue as $idx => $packet) {
-                        $delay[$packet['idx']][$sim] += $t + (T_CCA + T_DATA + T_CCA + T_ACK) * $idx - $packet['time'];
-                        $nb_pkg_recv[$packet['idx']][$sim]++;
+                        //Calculate delay
+                        foreach ($queue as $packet) {
+                            $delay[$packet['idx']][$sim] += $t + $t_trans - T_CCA - T_ACK - $packet['time'];
+                            $nb_pkg_recv[$packet['idx']][$sim]++;
+                        }
+
+                        //number of aggregation
+                        if (count($queue) > 1) {
+                            $nb_agg[$nb_sender][$sim]++;
+                        }
+                        //empty queue
+                        $queue = [];
+                        $queueIdx = 0;
                     }
-
-                    //empty queue
-                    $queue = [];
-                    $queueIdx = 0;
                 } else {
                     $t_node[NODE_SLEEP][DEST_IDX] += $t + $t_trans - $t_sleep[DEST_IDX];
                     $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
