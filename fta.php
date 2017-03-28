@@ -95,7 +95,7 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                 $t_node[NODE_TX][RELAY_IDX] += T_WB;
                 $t_trans += T_WB;
                 // CCA, receive DATA, CCA
-                $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_DATA + T_CCA) * $nb_wakeup;
+                $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_DATA + T_CCA + 1) * $nb_wakeup;
                 $t_trans += (T_CCA + T_DATA + T_CCA) * $nb_wakeup;
                 // send ACK
                 $t_node[NODE_TX][RELAY_IDX] += T_ACK * $nb_wakeup;
@@ -151,9 +151,14 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                     $t_sleep[DEST_IDX] = $t + $t_trans + T_CCA + T_WB + T_DATA;
                 }
 
-                $t_sleep[RELAY_IDX] = $t + $t_trans;
+                $t += $t_trans;
 
-                $t = min($twu[RELAY_IDX]);
+                $t_sleep[RELAY_IDX] = $t;
+
+                $next_wakeup = min($twu[RELAY_IDX]);
+                if ($t < $next_wakeup) {
+                    $t = $next_wakeup;
+                }
             }
 
             /**

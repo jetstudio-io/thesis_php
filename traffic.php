@@ -28,7 +28,7 @@ function generateTraffic($simTime, $numberChange, $fixedIWU) {
     return $twu;
 }
 
-for ($max_node = 3; $max_node <= 15; $max_node++) {
+for ($max_node = 3; $max_node <= 20; $max_node++) {
     $dir = "data/" . $max_node;
     if (!file_exists($dir)) {
         mkdir($dir, 0777, true);

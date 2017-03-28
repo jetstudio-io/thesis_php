@@ -31,7 +31,7 @@ const T_CCA = T_WB;
 const T_SLOT = T_CCA + T_DATA + T_CCA + T_ACK;
 
 // Config for simulation
-const max_node = 15;
+const max_node = 20;
 const number_sim = 100;
 const sim_time = 100000; //100s
 const delta_t = 10;
