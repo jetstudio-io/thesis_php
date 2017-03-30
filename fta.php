@@ -43,7 +43,7 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                 /**
                  * SENDER
                  */
-                $nb_wakeup = 0;
+                $nb_node_wakeup = 0;
                 for ($idx = 3; $idx <= $nb_node; $idx++) {
                     if ($twu[$idx][$twuIdx[$idx]] <= $t) {
                         // calculate sleep time
@@ -51,19 +51,19 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                         // calculate idle as rx time
                         $t_node[NODE_RX][$idx] += $t - $twu[$idx][$twuIdx[$idx]];
                         // calculate idle in waiting slot to send data
-                        $t_node[NODE_RX][$idx] += T_CCA + T_WB + $nb_wakeup * T_SLOT;
+                        $t_node[NODE_RX][$idx] += T_CCA + T_WB + $nb_node_wakeup * T_SLOT;
 
                         // calculate time in transmission process
                         $t_node[NODE_RX][$idx] += T_CCA + T_CCA + T_ACK;
                         $t_node[NODE_TX][$idx] += T_DATA;
 
                         // Change back to sleep
-                        $t_sleep[$idx] = $t + T_CCA + T_WB + ($nb_wakeup + 1) * T_SLOT;
+                        $t_sleep[$idx] = $t + T_CCA + T_WB + ($nb_node_wakeup + 1) * T_SLOT;
                         $twuIdx[$idx]++;
 
-                        $nb_wakeup++;
+                        $nb_node_wakeup++;
                         // Calculate the idle_listening
-                        $t_trans = T_CCA + T_WB + $nb_wakeup * T_SLOT;
+                        $t_trans = T_CCA + T_WB + $nb_node_wakeup * T_SLOT;
                         //Calculate communication time
                         $t_trans += T_CCA + T_DATA;
                         // store packet in queue
@@ -95,11 +95,11 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                 $t_node[NODE_TX][RELAY_IDX] += T_WB;
                 $t_trans += T_WB;
                 // CCA, receive DATA, CCA
-                $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_DATA + T_CCA + 1) * $nb_wakeup;
-                $t_trans += (T_CCA + T_DATA + T_CCA) * $nb_wakeup;
+                $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_DATA + T_CCA + 1) * $nb_node_wakeup;
+                $t_trans += (T_CCA + T_DATA + T_CCA) * $nb_node_wakeup;
                 // send ACK
-                $t_node[NODE_TX][RELAY_IDX] += T_ACK * $nb_wakeup;
-                $t_trans += T_ACK * $nb_wakeup;
+                $t_node[NODE_TX][RELAY_IDX] += T_ACK * $nb_node_wakeup;
+                $t_trans += T_ACK * $nb_node_wakeup;
                 // wait for new node join network
                 $t_node[NODE_RX][RELAY_IDX] += T_DATA;
                 $t_trans += T_DATA;
@@ -116,9 +116,9 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                     //Wait WB from destination
                     $t_node[NODE_RX][RELAY_IDX] += T_CCA + T_WB;
                     // Send nb_wakeup data packets to destination
-                    $t_node[NODE_TX][RELAY_IDX] += T_DATA * $nb_wakeup;
+                    $t_node[NODE_TX][RELAY_IDX] += T_DATA * $nb_node_wakeup;
                     // Receive ACK
-                    $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_CCA + T_ACK) * $nb_wakeup;
+                    $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_CCA + T_ACK) * $nb_node_wakeup;
 
                     /**
                      * Destination
@@ -129,10 +129,10 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                     $t_node[NODE_RX][DEST_IDX] += T_CCA;
                     $t_node[NODE_TX][DEST_IDX] += T_WB;
                     // Receive data packets
-                    $t_node[NODE_RX][DEST_IDX] += (T_CCA + T_DATA + T_CCA) * $nb_wakeup;
+                    $t_node[NODE_RX][DEST_IDX] += (T_CCA + T_DATA + T_CCA) * $nb_node_wakeup;
                     // Send ACK packets
-                    $t_node[NODE_TX][DEST_IDX] += T_ACK * $nb_wakeup;
-                    $t_trans += T_CCA + T_WB + (T_CCA + T_DATA + T_CCA + T_ACK) * $nb_wakeup;
+                    $t_node[NODE_TX][DEST_IDX] += T_ACK * $nb_node_wakeup;
+                    $t_trans += T_CCA + T_WB + (T_CCA + T_DATA + T_CCA + T_ACK) * $nb_node_wakeup;
                     $t_sleep[DEST_IDX] = $t + $t_trans;
 
                     //Calculate delay

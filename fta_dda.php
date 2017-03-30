@@ -12,14 +12,15 @@ const DELTA_MAX = 30;
 if (!file_exists(OUT_DIR)) {
     mkdir(OUT_DIR, 0777, TRUE);
 }
-for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
-    $delay_avg = $e_avg = array_fill(3, max_node - 2 , 0);
-    $nb_agg = $e = array_fill(1, max_node + 2, array_fill(1, number_sim + 1, 0));
+$agg_ratio = $agg_avg = $delay_avg = $e_avg = array_fill(1, 5 , array_fill(3, max_node - 2 , 0));
+
+for ($delta_max = 20; $delta_max <= 100; $delta_max+=20) {
+    $e = array_fill(1, max_node + 2, array_fill(1, number_sim + 1, 0));
 //variate number of sender
     for ($nb_sender = 3; $nb_sender <= max_node; $nb_sender++) {
         $nb_node = $nb_sender + 2;
 
-        $nb_pkg_agg = $nb_pkg_max = array_fill(1, number_sim, 0);
+        $nb_agg = $nb_pkg_relay = $nb_pkg_agg = $nb_pkg_agg_max = array_fill(1, number_sim, 0);
         $nb_pkg_agg_min = array_fill(1, number_sim, $nb_sender);
 
         $nb_pkg_recv = $delay = array_fill(1, max_node + 2, array_fill(1, number_sim + 1, 0));
@@ -43,7 +44,7 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                 /**
                  * SENDER
                  */
-                $nb_wakeup = 0;
+                $nb_node_wakeup = 0;
                 for ($idx = 3; $idx <= $nb_node; $idx++) {
                     if ($twu[$idx][$twuIdx[$idx]] <= $t) {
                         // calculate sleep time
@@ -51,19 +52,19 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                         // calculate idle as rx time
                         $t_node[NODE_RX][$idx] += $t - $twu[$idx][$twuIdx[$idx]];
                         // calculate idle in waiting slot to send data
-                        $t_node[NODE_RX][$idx] += T_CCA + T_WB + $nb_wakeup * T_SLOT;
+                        $t_node[NODE_RX][$idx] += T_CCA + T_WB + $nb_node_wakeup * T_SLOT;
 
                         // calculate time in transmission process
                         $t_node[NODE_RX][$idx] += T_CCA + T_CCA + T_ACK;
                         $t_node[NODE_TX][$idx] += T_DATA;
 
                         // Change back to sleep
-                        $t_sleep[$idx] = $t + T_CCA + T_WB + ($nb_wakeup + 1) * T_SLOT;
+                        $t_sleep[$idx] = $t + T_CCA + T_WB + ($nb_node_wakeup + 1) * T_SLOT;
                         $twuIdx[$idx]++;
 
-                        $nb_wakeup++;
+                        $nb_node_wakeup++;
                         // Calculate the idle_listening
-                        $t_trans = T_CCA + T_WB + $nb_wakeup * T_SLOT;
+                        $t_trans = T_CCA + T_WB + $nb_node_wakeup * T_SLOT;
                         //Calculate communication time
                         $t_trans += T_CCA + T_DATA;
                         // store packet in queue
@@ -95,11 +96,11 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                 $t_node[NODE_TX][RELAY_IDX] += T_WB;
                 $t_trans += T_WB;
                 // CCA, receive DATA, CCA
-                $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_DATA + T_CCA) * $nb_wakeup;
-                $t_trans += (T_CCA + T_DATA + T_CCA) * $nb_wakeup;
+                $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_DATA + T_CCA) * $nb_node_wakeup;
+                $t_trans += (T_CCA + T_DATA + T_CCA) * $nb_node_wakeup;
                 // send ACK
-                $t_node[NODE_TX][RELAY_IDX] += T_ACK * $nb_wakeup;
-                $t_trans += T_ACK * $nb_wakeup;
+                $t_node[NODE_TX][RELAY_IDX] += T_ACK * $nb_node_wakeup;
+                $t_trans += T_ACK * $nb_node_wakeup;
                 // wait for new node join network
                 $t_node[NODE_RX][RELAY_IDX] += T_DATA;
                 $t_trans += T_DATA;
@@ -120,9 +121,10 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                         $t_node[NODE_TX][DEST_IDX] += T_WB;
                         $t_sleep[DEST_IDX] = $t + $t_trans + T_CCA + T_WB + T_DATA;
                     } else { // send big packet to destination
+                        $nb_pkg_relay[$sim]++;
                         $nbPacket = count($queue);
                         // Receiver
-                        $t_data_agg = (L_DATA + ($nbPacket - 1) * (L_DATA - 7)) * 8 / bitrate;
+                        $t_data_agg = (L_DATA + ($nbPacket - 1) * (L_DATA - 9)) * 8 / bitrate;
                         $t_node[NODE_RX][RELAY_IDX] += T_CCA + T_WB + T_CCA + T_CCA + T_ACK;
                         $t_node[NODE_TX][RELAY_IDX] += $t_data_agg;
 
@@ -142,7 +144,14 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
 
                         //number of aggregation
                         if (count($queue) > 1) {
-                            $nb_agg[$nb_sender][$sim]++;
+                            $nb_agg[$sim]++;
+                            $nb_pkg_agg[$sim] += count($queue);
+                            if (count($queue) > $nb_pkg_agg_max[$sim]) {
+                                $nb_pkg_agg_max[$sim] = count($queue);
+                            }
+                            if (count($queue) < $nb_pkg_agg_min[$sim]) {
+                                $nb_pkg_agg_min[$sim] = count($queue);
+                            }
                         }
                         //empty queue
                         $queue = [];
@@ -155,9 +164,14 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
                     $t_sleep[DEST_IDX] = $t + $t_trans + T_CCA + T_WB + T_DATA;
                 }
 
-                $t_sleep[RELAY_IDX] = $t + $t_trans;
+                $t += $t_trans;
 
-                $t = min($twu[RELAY_IDX]);
+                $t_sleep[RELAY_IDX] = $t;
+
+                $next_wakeup = min($twu[RELAY_IDX]);
+                if ($t < $next_wakeup) {
+                    $t = $next_wakeup;
+                }
             }
 
             /**
@@ -175,19 +189,40 @@ for ($delta_max = 30; $delta_max <= 110; $delta_max+=20) {
             for ($idx = 3; $idx <= $nb_node; $idx++) {
                 $delay[$idx][$sim] = $delay[$idx][$sim] / $nb_pkg_recv[$idx][$sim];
             }
+            /**
+             * Aggregation ratio
+             */
+            $agg_ratio[floor($delta_max / 20)][$nb_sender] += $nb_agg[$sim] / $nb_pkg_relay[$sim];
+            $agg_avg[floor($delta_max / 20)][$nb_sender] += $nb_pkg_agg[$sim] / $nb_agg[$sim];
         }
         // Energy consumption per packet receipt
-        $e_avg[$nb_sender] = number_format(array_sum($e[$nb_sender]) / 1000 / number_sim * 2, 3);
+        $e_avg[floor($delta_max / 20)][$nb_sender] = number_format(array_sum($e[$nb_sender]) / 1000 / number_sim * 2, 3);
         // Delay average
-        $delay_avg[$nb_sender] = number_format(array_sum($delay[$nb_sender]) / number_sim, 3);
+        $delay_avg[floor($delta_max / 20)][$nb_sender] = number_format(array_sum($delay[$nb_sender]) / number_sim, 3);
         printf("%s: %s\n", $delta_max, $nb_sender);
     }
+}
 
-    $filename = "energy_delta_" . $delta_max . ".csv";
-    $file = fopen(OUT_DIR . $filename, 'w');
-    fputcsv($file, $e_avg);
+$filename = "energy.csv";
+$file = fopen(OUT_DIR . $filename, 'w');
+foreach ($e_avg as $e) {
+    fputcsv($file, $e);
+}
 
-    $filename = "delay_delta_" . $delta_max . ".csv";
-    $file = fopen(OUT_DIR . $filename, 'w');
-    fputcsv($file, $delay_avg);
+$filename = "delay.csv";
+$file = fopen(OUT_DIR . $filename, 'w');
+foreach ($delay_avg as $d) {
+    fputcsv($file, $d);
+}
+
+$filename = "ratio.csv";
+$file = fopen(OUT_DIR . $filename, 'w');
+foreach ($agg_ratio as $d) {
+    fputcsv($file, $d);
+}
+
+$filename = "agg.csv";
+$file = fopen(OUT_DIR . $filename, 'w');
+foreach ($agg_avg as $d) {
+    fputcsv($file, $d);
 }

@@ -2,9 +2,13 @@
 include_once 'include/input.php';
 include_once 'include/output.php';
 
-const OUT_DIR = 'ricer3/FA';
+const OUT_DIR = 'out/ricer3/std';
 
 const RELAY_IWU = 50;
+
+if (!file_exists(OUT_DIR)) {
+    mkdir(OUT_DIR, 0777, TRUE);
+}
 
 //variate number of sender
 for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {

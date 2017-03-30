@@ -21,7 +21,7 @@ const NODE_RX = 1;
 const NODE_TX = 2;
 
 const L_WB = 7;
-const L_DATA = 18;
+const L_DATA = 24;
 const L_ACK = 11;
 const bitrate = 250;
 const T_WB = L_WB * 8 / bitrate;
