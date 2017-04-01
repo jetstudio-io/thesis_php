@@ -5,8 +5,6 @@ include_once 'include/output.php';
 const OUT_DIR = 'out/fta/dda/';
 
 const RELAY_IWU = 100;
-const RELAY_IDX = 2;
-const DEST_IDX = 1;
 const DELTA_MAX = 30;
 
 if (!file_exists(OUT_DIR)) {

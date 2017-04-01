@@ -20,6 +20,9 @@ const NODE_SLEEP = 0;
 const NODE_RX = 1;
 const NODE_TX = 2;
 
+const RELAY_IDX = 2;
+const DEST_IDX = 1;
+
 const L_WB = 7;
 const L_DATA = 24;
 const L_ACK = 11;
