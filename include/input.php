@@ -32,6 +32,7 @@ const T_DATA = L_DATA * 8 / bitrate;
 const T_ACK = L_ACK * 8 / bitrate;
 const T_CCA = T_WB;
 const T_SLOT = T_CCA + T_DATA + T_CCA + T_ACK;
+const DATA_SAVED = 9;
 
 // Config for simulation
 const max_node = 20;

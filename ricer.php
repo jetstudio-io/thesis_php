@@ -2,7 +2,7 @@
 include_once 'include/input.php';
 include_once 'include/output.php';
 
-const OUT_DIR = 'out/ricer3/std';
+const OUT_DIR = 'out/ricer3/std/';
 
 const RELAY_IWU = 50;
 
@@ -10,6 +10,8 @@ if (!file_exists(OUT_DIR)) {
     mkdir(OUT_DIR, 0777, TRUE);
 }
 
+$delay_avg = $e_avg = array_fill(3, max_node - 2 , 0);
+$nb_agg = $e = array_fill(1, max_node + 2, array_fill(1, number_sim + 1, 0));
 //variate number of sender
 for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
     $nb_node = $nb_sender + 2;
@@ -84,9 +86,9 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
             //If relay node receipt data packets
             if (count($queue)) {
                 //idle listening time in waiting WB from destination
-                $t_node[NODE_RX][RELAY_IDX] += $twu[DEST_IDX] - $t;
+                $t_node[NODE_RX][RELAY_IDX] += $twu[DEST_IDX][0] - $t;
                 // update current simulation time
-                $t = $twu[DEST_IDX];
+                $t = $twu[DEST_IDX][0];
 
                 //RELAY: receive WB
                 $t_node[NODE_RX][RELAY_IDX] += T_CCA + T_WB;
@@ -110,14 +112,61 @@ for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
                 // go to sleep
                 $t_sleep[DEST_IDX] = $t + T_CCA + T_WB + (T_CCA + T_CCA + T_ACK) * count($queue) + T_DATA;
                 $twu[DEST_IDX][0] += RELAY_IWU;
+
+                //Calculate delay
+                foreach ($queue as $idx => $packet) {
+                    $delay[$packet['idx']][$sim] += $t + (T_CCA + T_DATA + T_CCA + T_ACK) * $idx - $packet['time'];
+                    $nb_pkg_recv[$packet['idx']][$sim]++;
+                }
+
+                //empty queue
+                $queue = [];
+                $queueIdx = 0;
             } else {
                 // RELAY : go to sleep
                 $t_sleep[RELAY_IDX] = $t;
                 $twu[RELAY_IDX][0] += RELAY_IWU;
 
                 // DESTINATION
-                $t_node[NODE_SLEEP][DEST_IDX];
+                // send WB & wait T_DATA if does not receive DATA
+                $t_node[NODE_SLEEP][DEST_IDX] += $twu[DEST_IDX][0] - $t_sleep[DEST_IDX];
+                $t_node[NODE_RX][DEST_IDX] += T_CCA;
+                $t_node[NODE_TX][DEST_IDX] += T_WB;
+                $t_node[NODE_RX][DEST_IDX] += T_DATA;
+                // go to sleep
+                $t_sleep[DEST_IDX] = $twu[DEST_IDX][0] + T_CCA + T_WB + T_DATA;
+                $twu[DEST_IDX][0] += RELAY_IWU;
             }
+            // Next wake up of relay node
+            $t = $twu[RELAY_IDX][0];
+        }
+        /**
+         * ENERGY
+         */
+        $e[$nb_sender][$sim] += (Psp * array_sum($t_node[NODE_SLEEP]) + Prx * array_sum($t_node[NODE_RX]) + Ptx * array_sum($t_node[NODE_TX]));
+        $nb_pkg_total = 0;
+        for ($idx = 1; $idx <= $nb_node; $idx++) {
+            $nb_pkg_total += $nb_pkg_recv[$idx][$sim];
+        }
+        $e[$nb_sender][$sim] /= $nb_pkg_total;
+        /**
+         * DELAY
+         */
+        for ($idx = 3; $idx <= $nb_node; $idx++) {
+            $delay[$idx][$sim] = $delay[$idx][$sim] / $nb_pkg_recv[$idx][$sim];
         }
     }
+    // Energy consumption per packet receipt
+    $e_avg[$nb_sender] = number_format(array_sum($e[$nb_sender]) / 1000 / number_sim * 2, 3);
+    // Delay average
+    $delay_avg[$nb_sender] = number_format(array_sum($delay[$nb_sender]) / number_sim, 3);
+    printf("%s\n", $nb_sender);
 }
+
+$filename = "energy.csv";
+$file = fopen(OUT_DIR . $filename, 'w');
+fputcsv($file, $e_avg);
+
+$filename = "delay.csv";
+$file = fopen(OUT_DIR . $filename, 'w');
+fputcsv($file, $delay_avg);
