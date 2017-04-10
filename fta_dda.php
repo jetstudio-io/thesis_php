@@ -193,6 +193,8 @@ for ($delta_max = 20; $delta_max <= 100; $delta_max+=20) {
             $agg_ratio[floor($delta_max / 20)][$nb_sender] += $nb_agg[$sim] / $nb_pkg_relay[$sim];
             $agg_avg[floor($delta_max / 20)][$nb_sender] += $nb_pkg_agg[$sim] / $nb_agg[$sim];
         }
+        $agg_ratio[floor($delta_max / 20)][$nb_sender] = number_format($agg_ratio[floor($delta_max / 20)][$nb_sender], 3);
+        $agg_avg[floor($delta_max / 20)][$nb_sender] = number_format($agg_avg[floor($delta_max / 20)][$nb_sender] / 100, 3);
         // Energy consumption per packet receipt
         $e_avg[floor($delta_max / 20)][$nb_sender] = number_format(array_sum($e[$nb_sender]) / 1000 / number_sim * 2, 3);
         // Delay average
