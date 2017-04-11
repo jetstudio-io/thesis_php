@@ -2,7 +2,7 @@
 include_once 'include/input.php';
 include_once 'include/output.php';
 
-const OUT_DIR = 'out/ricer3/fa/';
+const OUT_DIR = 'out/ricer3/dda/';
 
 const RELAY_IWU = 50;
 const DELTA_MAX = 30;
@@ -31,7 +31,7 @@ for ($delta_max = 20; $delta_max <= 100; $delta_max+=20) {
             $twu = getIWU($nb_sender, $sim);
             $t = (int)$twu[RELAY_IDX][0];
             // Destination & relay node is well synchronized
-//            $twu[DEST_IDX][0] = $t + T_CCA + T_WB + T_SLOT * $nb_sender + T_CCA;
+            $twu[DEST_IDX][0] = $t + T_CCA + T_WB + T_SLOT * $nb_sender + T_CCA;
             $twuIdx = array_fill(3, $nb_sender, 0);
             //$iwu = array_fill(3, $nb_sender, 100);
             // queue to store data packet -> calculate the delay
@@ -39,77 +39,6 @@ for ($delta_max = 20; $delta_max <= 100; $delta_max+=20) {
             $queueIdx = 0;
 
             while ($t < sim_time) {
-                // Relay node wakes up because the delta_max is reached
-                if ($t < $twu[RELAY_IDX][0]) {
-                    //Calculate the number of relay
-                    $nb_pkg_relay[$sim]++;
-
-                    //sleep time of relay node
-                    $t_node[NODE_SLEEP][RELAY_IDX] += $t - $t_sleep[RELAY_IDX];
-                    //sleep time of destination
-                    $t_node[NODE_SLEEP][DEST_IDX] += $twu[DEST_IDX][0] - $t_sleep[RELAY_IDX];
-                    //Wait for destination WB
-                    $t_node[NODE_RX][RELAY_IDX] += $twu[DEST_IDX][0] - $t;
-                    //update simulation time
-                    $t = $twu[DEST_IDX][0];
-
-                    $nbPacket = count($queue);
-                    $t_data_agg = (L_DATA + ($nbPacket - 1) * (L_DATA - DATA_SAVED)) * 8 / bitrate;
-
-                    //cca before send WB
-                    $t_node[NODE_RX][RELAY_IDX] += T_CCA;
-                    $t_node[NODE_RX][DEST_IDX] += T_CCA;
-                    //send WB
-                    $t_node[NODE_RX][RELAY_IDX] += T_WB;
-                    $t_node[NODE_TX][DEST_IDX] += T_WB;
-                    //cca before send DATA
-                    $t_node[NODE_RX][RELAY_IDX] += T_CCA;
-                    $t_node[NODE_RX][DEST_IDX] += T_CCA;
-                    //send DATA
-                    $t_node[NODE_RX][RELAY_IDX] += $t_data_agg;
-                    $t_node[NODE_TX][DEST_IDX] += $t_data_agg;
-                    //CCA before send ACK
-                    $t_node[NODE_RX][RELAY_IDX] += T_CCA;
-                    $t_node[NODE_RX][DEST_IDX] += T_CCA;
-                    //send ACK
-                    $t_node[NODE_RX][RELAY_IDX] += T_ACK;
-                    $t_node[NODE_TX][DEST_IDX] += T_ACK;
-
-                    // update simulation time to the end of communication
-                    $t += T_CCA + T_WB + T_CCA + $t_data_agg + T_CCA + T_ACK;
-
-                    // Go to sleep
-                    $t_sleep[DEST_IDX] = $t_sleep[RELAY_IDX] = $t;
-                    $twu[DEST_IDX][0] += RELAY_IWU;
-
-                    //Calculate delay
-                    foreach ($queue as $packet) {
-                        $delay[$packet['idx']][$sim] += $t - T_CCA - T_ACK - $packet['time'];
-                        $nb_pkg_recv[$packet['idx']][$sim]++;
-                    }
-
-                    //number of aggregation
-                    if (count($queue) > 1) {
-                        $nb_agg[$sim]++;
-                        $nb_pkg_agg[$sim] += count($queue);
-                        if (count($queue) > $nb_pkg_agg_max[$sim]) {
-                            $nb_pkg_agg_max[$sim] = count($queue);
-                        }
-                        if (count($queue) < $nb_pkg_agg_min[$sim]) {
-                            $nb_pkg_agg_min[$sim] = count($queue);
-                        }
-                    }
-                    //empty queue
-                    $queue = [];
-                    $queueIdx = 0;
-
-                    if ($twu[RELAY_IDX][0] < $t) {
-                        $twu[RELAY_IDX][0] += RELAY_IWU;
-                        $t = $twu[RELAY_IDX][0];
-                    }
-                    
-                    continue;
-                }
                 /**
                  * SENDER
                  */
