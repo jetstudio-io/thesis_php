@@ -6,17 +6,17 @@ function generateTraffic($simTime, $numberChange, $fixedIWU) {
     $twu[1] = $t;
     $change_idx = 1;
     $wu_idx = 2;
-    if ($fixedIWU != 0) {
+    if ($fixedIWU > 0) {
         $iwu = $fixedIWU;
     } else {
-        $iwu = rand(20, 100) * 10;
+        $iwu = rand(30, 100) * 10;
     }
     while ($t < $simTime) {
         if ($t >= $segment * $change_idx) {
             if ($fixedIWU != 0) {
                 $iwu = $fixedIWU;
             } else {
-                $iwu = rand(20, 100) * 10;
+                $iwu = rand(30, 100) * 10;
             }
             $change_idx = $change_idx + 1;
         }
@@ -28,7 +28,7 @@ function generateTraffic($simTime, $numberChange, $fixedIWU) {
     return $twu;
 }
 
-for ($max_node = 3; $max_node <= 20; $max_node++) {
+for ($max_node = 3; $max_node <= 13; $max_node++) {
     $dir = "data/" . $max_node;
     if (!file_exists($dir)) {
         mkdir($dir, 0777, true);
@@ -36,7 +36,8 @@ for ($max_node = 3; $max_node <= 20; $max_node++) {
     for ($sim = 0; $sim < 100; $sim++) {
         $file = $dir . "/" . ($sim + 1) . ".csv";
         $t = rand(10, 40);
-        file_put_contents($file, ($t + 7) . "\n", FILE_APPEND);
+        file_put_contents($file, $t . "\n", FILE_APPEND);
+        $t = rand(10, 40);
         file_put_contents($file, $t . "\n", FILE_APPEND);
         for ($node = 0; $node < $max_node; $node++) {
             $iwu = generateTraffic(100000, 0, 0);

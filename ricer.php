@@ -13,7 +13,7 @@ if (!file_exists(OUT_DIR)) {
 $delay_avg = $e_avg = array_fill(3, max_node - 2 , 0);
 $nb_agg = $e = array_fill(1, max_node + 2, array_fill(1, number_sim + 1, 0));
 //variate number of sender
-for ($nb_sender = 3; $nb_sender < max_node; $nb_sender++) {
+for ($nb_sender = 3; $nb_sender <= max_node; $nb_sender++) {
     $nb_node = $nb_sender + 2;
 
     $nb_agg = $nb_pkg_relay = $nb_pkg_agg = $nb_pkg_agg_max = array_fill(1, number_sim, 0);

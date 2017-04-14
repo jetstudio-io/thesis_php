@@ -10,9 +10,9 @@ const DELTA_MAX = 30;
 if (!file_exists(OUT_DIR)) {
     mkdir(OUT_DIR, 0777, TRUE);
 }
-$agg_ratio = $agg_avg = $delay_avg = $e_avg = array_fill(1, 5 , array_fill(3, max_node - 2 , 0));
+$agg_ratio = $agg_avg = $delay_avg = $e_avg = array_fill(1, max_delta_max / 10, array_fill(3, max_node, 0));
 
-for ($delta_max = 20; $delta_max <= 100; $delta_max+=20) {
+for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
     $e = array_fill(1, max_node + 2, array_fill(1, number_sim + 1, 0));
 //variate number of sender
     for ($nb_sender = 3; $nb_sender <= max_node; $nb_sender++) {
@@ -258,15 +258,16 @@ for ($delta_max = 20; $delta_max <= 100; $delta_max+=20) {
             /**
              * Aggregation ratio
              */
-            $agg_ratio[floor($delta_max / 20)][$nb_sender] += $nb_agg[$sim] / $nb_pkg_relay[$sim];
-            $agg_avg[floor($delta_max / 20)][$nb_sender] += $nb_pkg_agg[$sim] / $nb_agg[$sim];
+            $delta_idx = floor($delta_max / 10);
+            $agg_ratio[$delta_idx][$nb_sender] += $nb_agg[$sim] / $nb_pkg_relay[$sim];
+            $agg_avg[$delta_idx][$nb_sender] += $nb_pkg_agg[$sim] / $nb_agg[$sim];
         }
-        $agg_ratio[floor($delta_max / 20)][$nb_sender] = number_format($agg_ratio[floor($delta_max / 20)][$nb_sender], 3);
-        $agg_avg[floor($delta_max / 20)][$nb_sender] = number_format($agg_avg[floor($delta_max / 20)][$nb_sender] / 100, 3);
+        $agg_ratio[$delta_idx][$nb_sender] = number_format($agg_ratio[$delta_idx][$nb_sender], 3);
+        $agg_avg[$delta_idx][$nb_sender] = number_format($agg_avg[$delta_idx][$nb_sender] / 100, 3);
         // Energy consumption per packet receipt
-        $e_avg[floor($delta_max / 20)][$nb_sender] = number_format(array_sum($e[$nb_sender]) / 1000 / number_sim * 2, 3);
+        $e_avg[$delta_idx][$nb_sender] = number_format(array_sum($e[$nb_sender]) / 1000 / number_sim * 2, 3);
         // Delay average
-        $delay_avg[floor($delta_max / 20)][$nb_sender] = number_format(array_sum($delay[$nb_sender]) / number_sim, 3);
+        $delay_avg[$delta_idx][$nb_sender] = number_format(array_sum($delay[$nb_sender]) / number_sim, 3);
         printf("%s: %s\n", $delta_max, $nb_sender);
     }
 }
