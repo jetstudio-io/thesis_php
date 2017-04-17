@@ -1,6 +1,6 @@
 <?php
 function getIWU($nb_sender, $sim) {
-    $file = "data/" . $nb_sender . "/" . $sim . ".csv";
+    $file = "fixed/data/" . $nb_sender . "/" . $sim . ".csv";
     $fileHandle = fopen($file, "r");
     $twu = array();
     $twu[1] = fgetcsv($fileHandle, null, ",", "\n");

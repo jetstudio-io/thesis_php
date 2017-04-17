@@ -7,6 +7,8 @@ const OUT_DIR = 'out/fta/dda/';
 const RELAY_IWU = 100;
 const DELTA_MAX = 30;
 
+const DEST_WAITING = 1;
+
 if (!file_exists(OUT_DIR)) {
     mkdir(OUT_DIR, 0777, TRUE);
 }
@@ -103,9 +105,7 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
                 $t_node[NODE_RX][RELAY_IDX] += T_DATA;
                 $t_trans += T_DATA;
 
-                //add 3ms to delay
-                $t_node[NODE_RX][RELAY_IDX] += 2;
-                $t_trans += 2;
+                $t += $t_trans;
 
                 // if there is some packet in queue
                 // calculate the aggregation condition
@@ -114,24 +114,32 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
                     // aggregation condition is satisfied -> go to sleep
                     if ($nextWakeup < $queue[0]["time"] + $delta_max) {
                         // Destination still wake up & send WB
-                        $t_node[NODE_SLEEP][DEST_IDX] += $t + $t_trans - $t_sleep[DEST_IDX];
+                        $t_node[NODE_SLEEP][DEST_IDX] += $t + DEST_WAITING - $t_sleep[DEST_IDX];
                         $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
                         $t_node[NODE_TX][DEST_IDX] += T_WB;
-                        $t_sleep[DEST_IDX] = $t + $t_trans + T_CCA + T_WB + T_DATA;
+                        $t_sleep[DEST_IDX] = $t + DEST_WAITING + T_CCA + T_WB + T_DATA;
                     } else { // send big packet to destination
                         $nb_pkg_relay[$sim]++;
                         $nbPacket = count($queue);
                         // Receiver
+                        // delay between destination & relay
+                        $t_node[NODE_RX][RELAY_IDX] += DEST_WAITING;
+                        $t += DEST_WAITING;
+
+                        //Big DATA file
                         $t_data_agg = (L_DATA + ($nbPacket - 1) * (L_DATA - DATA_SAVED)) * 8 / bitrate;
+
+                        //Relay node send big DATA file
                         $t_node[NODE_RX][RELAY_IDX] += T_CCA + T_WB + T_CCA + T_CCA + T_ACK;
                         $t_node[NODE_TX][RELAY_IDX] += $t_data_agg;
 
                         // Destination
-                        $t_data_agg = (L_DATA + ($nbPacket - 1) * (L_DATA - DATA_SAVED)) * 8 / bitrate;
-                        $t_node[NODE_SLEEP][DEST_IDX] += $t + $t_trans - $t_sleep[DEST_IDX];
+                        $t_node[NODE_SLEEP][DEST_IDX] += $t - $t_sleep[DEST_IDX];
                         $t_node[NODE_RX][DEST_IDX] += T_CCA + T_CCA + $t_data_agg + T_CCA;
                         $t_node[NODE_TX][DEST_IDX] += T_WB + T_ACK;
-                        $t_trans += T_CCA + T_WB + T_CCA + $t_data_agg + T_CCA + T_ACK;
+                        $t_trans = T_CCA + T_WB + T_CCA + $t_data_agg + T_CCA + T_ACK;
+
+                        $t_sleep[RELAY_IDX] = $t + $t_trans;
                         $t_sleep[DEST_IDX] = $t + $t_trans;
 
                         //Calculate delay
@@ -156,15 +164,13 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
                         $queueIdx = 0;
                     }
                 } else {
-                    $t_node[NODE_SLEEP][DEST_IDX] += $t + $t_trans - $t_sleep[DEST_IDX];
+                    $t_sleep[RELAY_IDX] = $t;
+
+                    $t_node[NODE_SLEEP][DEST_IDX] += $t + DEST_WAITING - $t_sleep[DEST_IDX];
                     $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
                     $t_node[NODE_TX][DEST_IDX] += T_WB;
-                    $t_sleep[DEST_IDX] = $t + $t_trans + T_CCA + T_WB + T_DATA;
+                    $t_sleep[DEST_IDX] = $t + DEST_WAITING + T_CCA + T_WB + T_DATA;
                 }
-
-                $t += $t_trans;
-
-                $t_sleep[RELAY_IDX] = $t;
 
                 $next_wakeup = min($twu[RELAY_IDX]);
                 if ($t < $next_wakeup) {

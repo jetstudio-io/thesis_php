@@ -28,19 +28,21 @@ function generateTraffic($simTime, $numberChange, $fixedInit) {
     return $twu;
 }
 
-for ($max_node = 3; $max_node <= 13; $max_node++) {
-    $dir = "data/" . $max_node;
+for ($nb_sender = 3; $nb_sender <= 13; $nb_sender++) {
+    $dir = "fixed/data/" . $nb_sender;
     if (!file_exists($dir)) {
         mkdir($dir, 0777, true);
     }
     for ($sim = 0; $sim < 100; $sim++) {
         $file = $dir . "/" . ($sim + 1) . ".csv";
-        $t = rand(1, 50);
+//        $t = rand(1, 50);
+        $t = $nb_sender + 3;
         file_put_contents($file, $t . "\n", FILE_APPEND);
-        $t = rand(1, 50);
+//        $t = rand(1, 50);
+        $t = $nb_sender + 3;
         file_put_contents($file, $t . "\n", FILE_APPEND);
-        for ($node = 0; $node < $max_node; $node++) {
-            $iwu = generateTraffic(100000, 0, 0);
+        for ($idx = 3; $idx <= $nb_sender + 2; $idx++) {
+            $iwu = generateTraffic(100000, 0, $idx);
             $row = implode(",", $iwu) . "\n";
             file_put_contents($file, $row, FILE_APPEND);
         }

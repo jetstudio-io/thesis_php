@@ -97,6 +97,7 @@ for ($nb_sender = 3; $nb_sender <= max_node; $nb_sender++) {
 
             //If relay node receipt data packets
             if (count($queue)) {
+                $nbpkg = count($queue);
                 //idle listening time in waiting WB from destination
                 $t_node[NODE_RX][RELAY_IDX] += $twu[DEST_IDX][0] - $t;
                 // update current simulation time
@@ -105,11 +106,10 @@ for ($nb_sender = 3; $nb_sender <= max_node; $nb_sender++) {
                 //RELAY: receive WB
                 $t_node[NODE_RX][RELAY_IDX] += T_CCA + T_WB;
                 // send data packets to destination
-                $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_CCA + T_ACK) * count($queue);
-                $t_node[NODE_TX][RELAY_IDX] += T_DATA * count($queue);
-
+                $t_node[NODE_RX][RELAY_IDX] += (T_CCA + T_CCA + T_ACK) * $nbpkg;
+                $t_node[NODE_TX][RELAY_IDX] += T_DATA * $nbpkg;
                 // go to sleep
-                $t_sleep[RELAY_IDX] = $t + T_CCA + T_WB + (T_CCA + T_CCA + T_ACK) * count($queue);
+                $t_sleep[RELAY_IDX] = $t + T_CCA + T_WB + (T_CCA + T_CCA + T_ACK) * $nbpkg;
                 $twu[RELAY_IDX][0] += RELAY_IWU;
 
                 //DESTINATION:
@@ -120,14 +120,16 @@ for ($nb_sender = 3; $nb_sender <= max_node; $nb_sender++) {
                 // send WB
                 $t_node[NODE_TX][DEST_IDX] += T_WB;
                 // receive data packets
-                $t_node[NODE_RX][DEST_IDX] += (T_CCA + T_DATA + T_CCA) * count($queue);
+                $t_node[NODE_RX][DEST_IDX] += (T_CCA + T_DATA + T_CCA) * $nbpkg;
+                // send ACK
+                $t_node[NODE_TX][DEST_IDX] += T_ACK * $nbpkg;
                 // go to sleep
-                $t_sleep[DEST_IDX] = $t + T_CCA + T_WB + (T_CCA + T_CCA + T_ACK) * count($queue) + T_DATA;
+                $t_sleep[DEST_IDX] = $t + T_CCA + T_WB + T_SLOT * $nbpkg;
                 $twu[DEST_IDX][0] += RELAY_IWU;
 
                 //Calculate delay
                 foreach ($queue as $idx => $packet) {
-                    $delay[$packet['idx']][$sim] += $t + (T_CCA + T_DATA + T_CCA + T_ACK) * $idx - $packet['time'];
+                    $delay[$packet['idx']][$sim] += $t + T_CCA + T_WB + T_SLOT * ($idx + 1) - T_CCA - T_ACK - $packet['time'];
                     $nb_pkg_recv[$packet['idx']][$sim]++;
                 }
 
