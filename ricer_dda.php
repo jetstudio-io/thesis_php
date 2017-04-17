@@ -30,9 +30,27 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
             $t_sleep = $t_node[0] = $t_node[1] = $t_node[2] = array_fill(1, $nb_node, 0);
             $twu = getIWU($nb_sender, $sim);
             $t = (int)$twu[RELAY_IDX][0];
+
+            //Syn destination & relay
+            /*
+            if ($twu[DEST_IDX][0] < $t) {
+                // Destination still wake up & send WB
+                $t_node[NODE_SLEEP][DEST_IDX] = $twu[DEST_IDX][0] - $t_sleep[DEST_IDX];
+                $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
+                $t_node[NODE_TX][DEST_IDX] += T_WB;
+                $t_sleep[DEST_IDX] = $twu[DEST_IDX][0] + T_CCA + T_WB + T_DATA;
+                $twu[DEST_IDX][0] += RELAY_IWU;
+            }*/
+
             // Destination & relay node is well synchronized
             $twu[DEST_IDX][0] = $t + T_CCA + T_WB + T_SLOT * $nb_sender + T_CCA;
+
             $twuIdx = array_fill(3, $nb_sender, 0);
+
+            $couter = $iwu = array_fill(1, $nb_node, 1);
+
+            $couter = array_fill(1, $nb_node, 0);
+
             //$iwu = array_fill(3, $nb_sender, 100);
             // queue to store data packet -> calculate the delay
             $queue = [];
@@ -44,6 +62,8 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
                  */
                 $nb_node_wakeup = 0;
                 for ($idx = 3; $idx <= $nb_node; $idx++) {
+                    // Increase couter for node idx
+                    $couter[$idx]++;
                     if ($twu[$idx][$twuIdx[$idx]] <= $t) {
                         // calculate sleep time
                         $t_node[NODE_SLEEP][$idx] += $twu[$idx][$twuIdx[$idx]] - $t_sleep[$idx];
@@ -69,6 +89,9 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
                                              'time' => $t + $t_trans
                         ];
                         $queueIdx++;
+
+                        $iwu[$idx] = $couter[$idx];
+                        $couter[$idx] = 0;
                     }
                 }
 
@@ -90,20 +113,30 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
                 // if there is some packet in queue
                 // calculate the aggregation condition
                 if (count($queue)) {
-                    // aggregation condition is satisfied -> go to sleep
-                    if ($t < $queue[0]["time"] + $delta_max) {
+                    // Calculate the next DATA packet arrive time
+                    $nextPkg = sim_time;
+                    for ($idx = 3; $idx <= $nb_node; $idx++) {
+                        $tmp = ($iwu[$idx] - $couter[$idx]) * RELAY_IWU;
+                        if ($tmp < $nextPkg) {
+                            $nextPkg = $tmp;
+                        }
+                    }
+                    if ($nextPkg < RELAY_IWU) {
+                        $nextPkg = RELAY_IWU;
+                    }
+                    // if there is a DATA packet arrive in waiting time -> go to sleep & wait next packet
+                    if ($t + $nextPkg < $queue[0]["time"] + $delta_max) {
                         $t_sleep[RELAY_IDX] = $t;
                         $twu[RELAY_IDX][0] += RELAY_IWU;
 
-                        if ($twu[DEST_IDX][0] < $queue[0]["time"] + $delta_max) {
-                            // Destination still wake up & send WB
-                            $t_node[NODE_SLEEP][DEST_IDX] = $twu[DEST_IDX][0] - $t_sleep[DEST_IDX];
-                            $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
-                            $t_node[NODE_TX][DEST_IDX] += T_WB;
-                            $t_sleep[DEST_IDX] = $twu[DEST_IDX][0] + T_CCA + T_WB + T_DATA;
-                            $twu[DEST_IDX][0] += RELAY_IWU;
-                        }
-                    } else { // send big packet to destination
+                        // Destination still wake up & send WB
+                        $t_node[NODE_SLEEP][DEST_IDX] = $twu[DEST_IDX][0] - $t_sleep[DEST_IDX];
+                        $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
+                        $t_node[NODE_TX][DEST_IDX] += T_WB;
+                        $t_sleep[DEST_IDX] = $twu[DEST_IDX][0] + T_CCA + T_WB + T_DATA;
+                        $twu[DEST_IDX][0] += RELAY_IWU;
+                    }
+                    else { // send big packet to destination
                         //Relay node stay awake to wait WB from destination
                         $t_node[NODE_RX][RELAY_IDX] += $twu[DEST_IDX][0] - $t;
                         //update simulation time
@@ -162,11 +195,7 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
                     $twu[DEST_IDX][0] += RELAY_IWU;
                 }
 
-                if (count($queue)) {
-                    $t = min($twu[RELAY_IDX][0], $queue[0]["time"] + $delta_max);
-                } else {
-                    $t = $twu[RELAY_IDX][0];
-                }
+                $t = $twu[RELAY_IDX][0];
             }
 
             /**

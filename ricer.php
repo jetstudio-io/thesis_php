@@ -28,8 +28,20 @@ for ($nb_sender = 3; $nb_sender <= max_node; $nb_sender++) {
         $t_sleep = $t_node[0] = $t_node[1] = $t_node[2] = array_fill(1, $nb_node, 0);
         $twu = getIWU($nb_sender, $sim);
         $t = (int)$twu[RELAY_IDX][0];
+        //Syn destination & relay
+        /*
+        if ($twu[DEST_IDX][0] < $t) {
+            // Destination still wake up & send WB
+            $t_node[NODE_SLEEP][DEST_IDX] = $twu[DEST_IDX][0] - $t_sleep[DEST_IDX];
+            $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
+            $t_node[NODE_TX][DEST_IDX] += T_WB;
+            $t_sleep[DEST_IDX] = $twu[DEST_IDX][0] + T_CCA + T_WB + T_DATA;
+            $twu[DEST_IDX][0] += RELAY_IWU;
+        }*/
+
         // Destination & relay node is well synchronized
         $twu[DEST_IDX][0] = $t + T_CCA + T_WB + T_SLOT * $nb_sender + T_CCA;
+
         $twuIdx = array_fill(3, $nb_sender, 0);
         //$iwu = array_fill(3, $nb_sender, 100);
         // queue to store data packet -> calculate the delay

@@ -10,7 +10,7 @@ const DELTA_MAX = 30;
 if (!file_exists(OUT_DIR)) {
     mkdir(OUT_DIR, 0777, TRUE);
 }
-$agg_ratio = $agg_avg = $delay_avg = $e_avg = array_fill(1, max_delta_max / 10, array_fill(3, max_node, 0));
+$agg_ratio = $agg_avg = $delay_avg = $e_avg = array_fill(1, max_delta_max / 10, array_fill(3, max_node - 2, 0));
 
 for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
     $e = array_fill(1, max_node + 2, array_fill(1, number_sim + 1, 0));
@@ -104,8 +104,8 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
                 $t_trans += T_DATA;
 
                 //add 3ms to delay
-                $t_node[NODE_RX][RELAY_IDX] += 3;
-                $t_trans += 3;
+                $t_node[NODE_RX][RELAY_IDX] += 2;
+                $t_trans += 2;
 
                 // if there is some packet in queue
                 // calculate the aggregation condition
