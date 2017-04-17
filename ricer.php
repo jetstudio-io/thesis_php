@@ -2,7 +2,7 @@
 include_once 'include/input.php';
 include_once 'include/output.php';
 
-const OUT_DIR = 'out/ricer3/std/';
+const OUT_DIR = 'out/fixed/ricer3/std/';
 
 const RELAY_IWU = 50;
 
