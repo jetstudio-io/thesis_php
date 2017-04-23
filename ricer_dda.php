@@ -33,17 +33,19 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
             $t = (int)$twu[RELAY_IDX][0];
 
             //Syn destination & relay
-            if ($twu[DEST_IDX][0] < $t) {
-                // Destination still wake up & send WB
-                $t_node[NODE_SLEEP][DEST_IDX] = $twu[DEST_IDX][0] - $t_sleep[DEST_IDX];
-                $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
-                $t_node[NODE_TX][DEST_IDX] += T_WB;
-                $t_sleep[DEST_IDX] = $twu[DEST_IDX][0] + T_CCA + T_WB + T_DATA;
-                $twu[DEST_IDX][0] += RELAY_IWU;
+            if (RUN_TYPE == 'rand2') {
+                if ($twu[DEST_IDX][0] < $t) {
+                    // Destination still wake up & send WB
+                    $t_node[NODE_SLEEP][DEST_IDX] = $twu[DEST_IDX][0] - $t_sleep[DEST_IDX];
+                    $t_node[NODE_RX][DEST_IDX] += T_CCA + T_DATA;
+                    $t_node[NODE_TX][DEST_IDX] += T_WB;
+                    $t_sleep[DEST_IDX] = $twu[DEST_IDX][0] + T_CCA + T_WB + T_DATA;
+                    $twu[DEST_IDX][0] += RELAY_IWU;
+                }
+            } else {
+                // Destination & relay node is well synchronized
+                $twu[DEST_IDX][0] = $t + T_CCA + T_WB + T_SLOT * $nb_sender + T_CCA;
             }
-
-            // Destination & relay node is well synchronized
-            //$twu[DEST_IDX][0] = $t + T_CCA + T_WB + T_SLOT * $nb_sender + T_CCA;
 
             $twuIdx = array_fill(3, $nb_sender, 0);
 
