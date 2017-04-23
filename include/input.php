@@ -1,6 +1,6 @@
 <?php
 function getIWU($nb_sender, $sim) {
-    $file = "fixed/data/" . $nb_sender . "/" . $sim . ".csv";
+    $file = RUN_TYPE . "/data/" . $nb_sender . "/" . $sim . ".csv";
     $fileHandle = fopen($file, "r");
     $twu = array();
     $twu[1] = fgetcsv($fileHandle, null, ",", "\n");
@@ -40,3 +40,5 @@ const number_sim = 100;
 const sim_time = 100000; //100s
 const delta_t = 10;
 const max_delta_max = 160;
+
+const RUN_TYPE = 'rand1';

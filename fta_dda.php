@@ -2,7 +2,7 @@
 include_once 'include/input.php';
 include_once 'include/output.php';
 
-const OUT_DIR = 'out/fixed/fta/dda/';
+const OUT_DIR = 'out/rand2/fta/dda/';
 
 const RELAY_IWU = 100;
 const DELTA_MAX = 30;

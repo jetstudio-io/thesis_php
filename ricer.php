@@ -2,7 +2,7 @@
 include_once 'include/input.php';
 include_once 'include/output.php';
 
-const OUT_DIR = 'out/fixed/ricer3/std/';
+const OUT_DIR = 'out/' . RUN_TYPE . '/ricer3/std/';
 
 const RELAY_IWU = 50;
 
@@ -29,7 +29,6 @@ for ($nb_sender = 3; $nb_sender <= max_node; $nb_sender++) {
         $twu = getIWU($nb_sender, $sim);
         $t = (int)$twu[RELAY_IDX][0];
         //Syn destination & relay
-        /*
         if ($twu[DEST_IDX][0] < $t) {
             // Destination still wake up & send WB
             $t_node[NODE_SLEEP][DEST_IDX] = $twu[DEST_IDX][0] - $t_sleep[DEST_IDX];
@@ -37,10 +36,10 @@ for ($nb_sender = 3; $nb_sender <= max_node; $nb_sender++) {
             $t_node[NODE_TX][DEST_IDX] += T_WB;
             $t_sleep[DEST_IDX] = $twu[DEST_IDX][0] + T_CCA + T_WB + T_DATA;
             $twu[DEST_IDX][0] += RELAY_IWU;
-        }*/
+        }
 
         // Destination & relay node is well synchronized
-        $twu[DEST_IDX][0] = $t + T_CCA + T_WB + T_SLOT * $nb_sender + T_CCA;
+        //$twu[DEST_IDX][0] = $t + T_CCA + T_WB + T_SLOT * $nb_sender + T_CCA;
 
         $twuIdx = array_fill(3, $nb_sender, 0);
         //$iwu = array_fill(3, $nb_sender, 100);

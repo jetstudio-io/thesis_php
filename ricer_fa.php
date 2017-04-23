@@ -2,7 +2,7 @@
 include_once 'include/input.php';
 include_once 'include/output.php';
 
-const OUT_DIR = 'out/fixed/ricer3/fa/';
+const OUT_DIR = 'out/' . RUN_TYPE . '/ricer3/fa/';
 
 const RELAY_IWU = 50;
 const DELTA_MAX = 30;
@@ -31,7 +31,6 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
             $twu = getIWU($nb_sender, $sim);
             $t = (int)$twu[RELAY_IDX][0];
             //Syn destination & relay
-            /*
             if ($twu[DEST_IDX][0] < $t) {
                 // Destination still wake up & send WB
                 $t_node[NODE_SLEEP][DEST_IDX] = $twu[DEST_IDX][0] - $t_sleep[DEST_IDX];
@@ -39,10 +38,10 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
                 $t_node[NODE_TX][DEST_IDX] += T_WB;
                 $t_sleep[DEST_IDX] = $twu[DEST_IDX][0] + T_CCA + T_WB + T_DATA;
                 $twu[DEST_IDX][0] += RELAY_IWU;
-            }*/
+            }
 
             // Destination & relay node is well synchronized
-            $twu[DEST_IDX][0] = $t + T_CCA + T_WB + T_SLOT * $nb_sender + T_CCA;
+            //$twu[DEST_IDX][0] = $t + T_CCA + T_WB + T_SLOT * $nb_sender + T_CCA;
 
             $twuIdx = array_fill(3, $nb_sender, 0);
             //$iwu = array_fill(3, $nb_sender, 100);
@@ -203,7 +202,7 @@ for ($delta_max = 10; $delta_max <= max_delta_max; $delta_max+=10) {
                         $t_node[NODE_SLEEP][DEST_IDX] += $t - $t_sleep[DEST_IDX];
                         $t_node[NODE_RX][DEST_IDX] += T_CCA + T_CCA + $t_data_agg + T_CCA;
                         $t_node[NODE_TX][DEST_IDX] += T_WB + T_ACK;
-                        $t_trans += T_CCA + T_WB + T_CCA + $t_data_agg + T_CCA + T_ACK;
+                        $t_trans = T_CCA + T_WB + T_CCA + $t_data_agg + T_CCA + T_ACK;
 
                         //Relay node & destination go to sleep after exchange ACK
                         $t_sleep[RELAY_IDX] = $t + $t_trans;
